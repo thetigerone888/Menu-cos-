@@ -1,0 +1,664 @@
+import { useState, useMemo, useCallback } from “react”;
+
+const INGREDIENTS_DB = [
+{ id:“ING0001”, name:“บะหมี่เส้นแบน อย่างดี”, unit:“ห่อ”, costPerUnit:40 },
+{ id:“ING0002”, name:“เส้นหมี่แชมป์”, unit:“g”, costPerUnit:0.034 },
+{ id:“ING0003”, name:“เส้นใหญ่น้ำหนึ่งโล”, unit:“g”, costPerUnit:0.025 },
+{ id:“ING0004”, name:“เส้นเล็กอาทิตย์”, unit:“g”, costPerUnit:0.032 },
+{ id:“ING0005”, name:“เส้นเล็กดอกบัว”, unit:“g”, costPerUnit:0.035 },
+{ id:“ING0006”, name:“วุ้นเส้นกิเลน”, unit:“g”, costPerUnit:0.032 },
+{ id:“ING0007”, name:“มาม่าต้มยำ (ห่อสีเงิน)”, unit:“ห่อ”, costPerUnit:185 },
+{ id:“ING0008”, name:“ลูกชิ้นหมูโฮเด้งลูกใหญ่”, unit:“คู่”, costPerUnit:205 },
+{ id:“ING0009”, name:“ลูกชิ้นเนื้อโฮเด้งลูกใหญ่”, unit:“คู่”, costPerUnit:205 },
+{ id:“ING0010”, name:“ลูกชิ้นเอ็นเนื้อโฮเด้งลูกใหญ่”, unit:“คู่”, costPerUnit:205 },
+{ id:“ING0011”, name:“ถั่วงอก”, unit:“g”, costPerUnit:0.022 },
+{ id:“ING0012”, name:“ผักคึ่นช่าย”, unit:“g”, costPerUnit:0.08 },
+{ id:“ING0013”, name:“ผักกาดหอม”, unit:“g”, costPerUnit:0.08 },
+{ id:“ING0014”, name:“กระเพราแดง”, unit:“g”, costPerUnit:0.06 },
+{ id:“ING0015”, name:“พริกแดงจินดา”, unit:“g”, costPerUnit:0.095 },
+{ id:“ING0016”, name:“พริกขี้หนูสวนสีเขียว”, unit:“g”, costPerUnit:0.18 },
+{ id:“ING0017”, name:“ใบเตย”, unit:“g”, costPerUnit:0.06 },
+{ id:“ING0018”, name:“กระเทียมกลีบเล็ก”, unit:“g”, costPerUnit:0.09 },
+{ id:“ING0019”, name:“กระเทียมกลีบใหญ่”, unit:“g”, costPerUnit:0.09 },
+{ id:“ING0020”, name:“น้ำตาลปี๊บอย่างดี”, unit:“g”, costPerUnit:0.045 },
+{ id:“ING0021”, name:“น้ำส้มหมัก”, unit:“ขวด”, costPerUnit:25 },
+{ id:“ING0022”, name:“ตุ๋นเนื้อ ส.เพิ่มทรัพย์”, unit:“แผง”, costPerUnit:80 },
+{ id:“ING0023”, name:“ตุ๋นหมู ส.เพิ่มทรัพย์”, unit:“แผง”, costPerUnit:80 },
+{ id:“ING0024”, name:“ผงหมักหมูนุ่ม”, unit:“แผง”, costPerUnit:85 },
+{ id:“ING0025”, name:“พริกน้ำตาลไร่ทิพย์”, unit:“Pack”, costPerUnit:27 },
+{ id:“ING0026”, name:“พริกไทยขาวไร่ทิพย์”, unit:“P.”, costPerUnit:60 },
+{ id:“ING0027”, name:“พริกป่นไร่ทิพย์”, unit:“ห่อ”, costPerUnit:110 },
+{ id:“ING0028”, name:“ซีอิ๊วขาวเห็ดหอม (ขวด)”, unit:“ขวด”, costPerUnit:75 },
+{ id:“ING0029”, name:“รสดีเนื้อ”, unit:“Pack”, costPerUnit:150 },
+{ id:“ING0030”, name:“เนื้อสามชั้น”, unit:“g”, costPerUnit:0.22 },
+{ id:“ING0031”, name:“ชายโครง”, unit:“g”, costPerUnit:0.22 },
+{ id:“ING0032”, name:“เนื้อสด”, unit:“g”, costPerUnit:0.22 },
+{ id:“ING0033”, name:“ตับเนื้อ”, unit:“g”, costPerUnit:0.23 },
+{ id:“ING0034”, name:“ผ้าขี้ริ้ว”, unit:“g”, costPerUnit:0.20 },
+{ id:“ING0035”, name:“เอ็นเนื้อ”, unit:“g”, costPerUnit:0.20 },
+{ id:“ING0036”, name:“ขั้วตับเนื้อ”, unit:“g”, costPerUnit:0.18 },
+{ id:“ING0038”, name:“ขั้วตับหมู”, unit:“g”, costPerUnit:0.185 },
+{ id:“ING0039”, name:“หมูหั่นชิ้น”, unit:“g”, costPerUnit:0.14 },
+{ id:“ING0041”, name:“ซีอิ๊วขาวเห็ดหอม (ml)”, unit:“ml”, costPerUnit:0.07 },
+{ id:“ING0042”, name:“น้ำซุปปรุงรสสำเร็จ”, unit:“ml”, costPerUnit:0.075 },
+{ id:“ING0043”, name:“ซีอิ๊วดำ ฉลากส้ม”, unit:“ml”, costPerUnit:0.066 },
+{ id:“ING0044”, name:“กระเทียมเจียวเล็ก”, unit:“g”, costPerUnit:0.60 },
+{ id:“ING0045”, name:“กระเทียมเจียวเม็ดใหญ่”, unit:“g”, costPerUnit:0.45 },
+{ id:“ING0046”, name:“พริกไทย (ไม่ละเอียด)”, unit:“g”, costPerUnit:0.50 },
+{ id:“ING0047”, name:“น้ำตาลปี๊บ (สูตรน้ำสต๊อก)”, unit:“g”, costPerUnit:0.055 },
+{ id:“ING0048”, name:“รสดีเนื้อ 70g”, unit:“g”, costPerUnit:0.357 },
+{ id:“ING0049”, name:“เครื่องปรุงหมู (ท่อ)”, unit:“ท่อ”, costPerUnit:40 },
+{ id:“ING0050”, name:“เครื่องปรุงเนื้อ (ท่อ)”, unit:“ท่อ”, costPerUnit:40 },
+{ id:“ING0053”, name:“น้ำซุปปรุงรสฝาเขียว”, unit:“ml”, costPerUnit:0.075 },
+{ id:“ING0054”, name:“น้ำตาลมะพร้าว”, unit:“g”, costPerUnit:0.055 },
+{ id:“ING_STOCK_PORK”, name:“น้ำสต๊อกหมู (ทำเอง)”, unit:“ml”, costPerUnit:0.00554 },
+{ id:“ING_STOCK_BEEF”, name:“น้ำสต๊อกเนื้อ (ทำเอง)”, unit:“ml”, costPerUnit:0.0051 },
+{ id:“ING_EGG”, name:“ไข่ไก่”, unit:“ฟอง”, costPerUnit:4 },
+{ id:“ING_RICE”, name:“ข้าวหอมมะลิ”, unit:“g”, costPerUnit:0.025 },
+{ id:“ING_PORK_MINCE”, name:“หมูสับ”, unit:“g”, costPerUnit:0.14 },
+{ id:“ING_BEEF_MINCE”, name:“เนื้อสับ”, unit:“g”, costPerUnit:0.22 },
+{ id:“ING_BASIL”, name:“ใบกระเพรา”, unit:“g”, costPerUnit:0.07 },
+{ id:“ING_OYSTER”, name:“น้ำมันหอย”, unit:“ml”, costPerUnit:0.083 },
+{ id:“ING_FISHSAUCE”, name:“น้ำปลา”, unit:“ml”, costPerUnit:0.04 },
+{ id:“ING_SOYSAUCE_W”, name:“ซีอิ๊วขาว”, unit:“ml”, costPerUnit:0.05 },
+{ id:“ING_SOYSAUCE_D”, name:“ซีอิ๊วดำ”, unit:“ml”, costPerUnit:0.057 },
+{ id:“ING_SUGAR”, name:“น้ำตาลทราย”, unit:“g”, costPerUnit:0.025 },
+{ id:“ING_OIL”, name:“น้ำมันพืช”, unit:“ml”, costPerUnit:0.055 },
+{ id:“ING_TOFU”, name:“เต้าหู้เหลือง”, unit:“g”, costPerUnit:0.04 },
+{ id:“ING_COCONUT”, name:“กะทิ”, unit:“ml”, costPerUnit:0.05 },
+{ id:“ING_DRIED_CHILI”, name:“พริกแห้ง”, unit:“g”, costPerUnit:0.40 },
+{ id:“ING_PEPPER_W”, name:“พริกไทยขาวเม็ด”, unit:“g”, costPerUnit:0.424 },
+{ id:“ING_PEPPER_B”, name:“พริกไทยดำเม็ด”, unit:“g”, costPerUnit:0.342 },
+{ id:“ING_CORIANDER”, name:“เม็ดผักชี”, unit:“g”, costPerUnit:0.25 },
+{ id:“ING_GALANGAL”, name:“ข่า”, unit:“g”, costPerUnit:0.06 },
+{ id:“ING_LEMONGRASS”, name:“ตะไคร้”, unit:“g”, costPerUnit:0.05 },
+{ id:“ING_PHALO”, name:“ผงพะโล้”, unit:“P.”, costPerUnit:10 },
+{ id:“ING_ROSEDEE_MOO”, name:“รสดีหมู (g)”, unit:“g”, costPerUnit:0.15 },
+{ id:“ING_PORKBALL”, name:“ลูกชิ้นหมูปิ้ง”, unit:“ลูก”, costPerUnit:4 },
+{ id:“ING_BEEFBALL”, name:“ลูกชิ้นเนื้อ”, unit:“ลูก”, costPerUnit:5 },
+{ id:“ING_PORK_BOILED”, name:“หมูตุ๋น”, unit:“g”, costPerUnit:0.16 },
+{ id:“ING_BEEF_BOILED”, name:“เนื้อตุ๋น”, unit:“g”, costPerUnit:0.25 },
+{ id:“ING_VINEGAR”, name:“น้ำส้มสายชู”, unit:“ml”, costPerUnit:0.021 },
+{ id:“ING_SESAME”, name:“น้ำมันงา”, unit:“ml”, costPerUnit:0.26 },
+{ id:“ING_LIME”, name:“มะนาว”, unit:“ลูก”, costPerUnit:3 },
+{ id:“ING_VERMICELLI”, name:“เส้นหมี่ (ใช้ในสูตรหมี่คลุก)”, unit:“g”, costPerUnit:0.034 },
+{ id:“ING_CRISPY_PORK”, name:“หมูกรอบ”, unit:“g”, costPerUnit:0.30 },
+{ id:“ING_BANANA”, name:“กล้วย”, unit:“ลูก”, costPerUnit:5 },
+{ id:“ING_PAPAYA”, name:“มะละกอ”, unit:“g”, costPerUnit:0.02 },
+{ id:“ING_JACKFRUIT”, name:“ขนุน”, unit:“g”, costPerUnit:0.05 },
+{ id:“ING_COCONUT_MILK”, name:“มะพร้าวทั้งลูก”, unit:“ลูก”, costPerUnit:20 },
+];
+
+const MENUS_DATA = [
+{ id:“M00”, cat:“รายการเสริม”, name:“สั่งทำข้าวกล่อง+น้ำขวด”, name2:“Custom Lunch Box + Bottled Water”, price:70, recommended:false },
+{ id:“M01”, cat:“เครื่องดื่ม”, name:“ชาไทย”, name2:“Thai Milk Tea”, price:25, recommended:false },
+{ id:“M02”, cat:“เครื่องดื่ม”, name:“ชเวปส์มะนาวโซดา”, name2:“Schweppes”, price:25, recommended:false },
+{ id:“M03”, cat:“เครื่องดื่ม”, name:“น้ำมะพร้าว”, name2:“Coconut Water”, price:30, recommended:true },
+{ id:“M04”, cat:“เครื่องดื่ม”, name:“น้ำส้ม”, name2:“Orange Juice”, price:15, recommended:false },
+{ id:“M05”, cat:“เครื่องดื่ม”, name:“น้ำส้ม SPLASH”, name2:“SPLASH Orange Juice”, price:20, recommended:false },
+{ id:“M06”, cat:“เครื่องดื่ม”, name:“น้ำเขียว”, name2:“Green Soda”, price:15, recommended:false },
+{ id:“M07”, cat:“เครื่องดื่ม”, name:“น้ำเปล่า”, name2:“Bottled Water”, price:10, recommended:false },
+{ id:“M08”, cat:“เครื่องดื่ม”, name:“น้ำแดง”, name2:“Red Soda”, price:15, recommended:false },
+{ id:“M09”, cat:“เครื่องดื่ม”, name:“น้ำเก๊กฮวย”, name2:“Chrysanthemum Tea”, price:25, recommended:false },
+{ id:“M10”, cat:“เครื่องดื่ม”, name:“สไปร์ท”, name2:“Sprite”, price:15, recommended:false },
+{ id:“M11”, cat:“เครื่องดื่ม”, name:“โค้ก”, name2:“Coke”, price:15, recommended:false },
+{ id:“M12”, cat:“เครื่องดื่ม”, name:“โค้กซีโร่”, name2:“Coke Zero”, price:15, recommended:false },
+{ id:“M13”, cat:“เครื่องดื่ม”, name:“โออิชิ”, name2:“Oishi Green Tea”, price:15, recommended:false },
+{ id:“M14”, cat:“เมนูข้าว”, name:“ข้าวกระเพราหมูตุ๋น”, name2:“Pork Boiled Basil with Rice”, price:60, recommended:false },
+{ id:“M15”, cat:“เมนูข้าว”, name:“ข้าวกระเพราหมูนุ่ม”, name2:“Pork Basil with Rice”, price:60, recommended:false },
+{ id:“M16”, cat:“เมนูข้าว”, name:“ข้าวกระเพราหมูสับ”, name2:“Pork mince Basil with Rice”, price:60, recommended:false },
+{ id:“M17”, cat:“เมนูข้าว”, name:“ข้าวกระเพราเนื้อตุ๋น”, name2:“Beef Boiled Basil with Rice”, price:70, recommended:false },
+{ id:“M18”, cat:“เมนูข้าว”, name:“ข้าวกระเพราเนื้อสับ”, name2:“Beef mince Basil with Rice”, price:70, recommended:false },
+{ id:“M19”, cat:“เมนูข้าว”, name:“ข้าวกระเพราเนื้อแดดเดียว”, name2:“Basil Stir-Fry with Sun-Dried Beef”, price:99, recommended:true },
+{ id:“M20”, cat:“เมนูข้าว”, name:“ข้าวตับเนื้อกระเทียม”, name2:“Beef Liver Garlic Rice”, price:70, recommended:false },
+{ id:“M21”, cat:“เมนูข้าว”, name:“ข้าวหมูกระเทียม”, name2:“Pork Garlic Rice”, price:60, recommended:false },
+{ id:“M22”, cat:“เมนูข้าว”, name:“ข้าวเนื้อกระเทียม”, name2:“Beef Garlic Rice”, price:70, recommended:false },
+{ id:“M23”, cat:“เมนูข้าว”, name:“ข้าวเปล่า”, name2:“Steamed Rice”, price:10, recommended:false },
+{ id:“M24”, cat:“เมนูข้าว”, name:“บะหมี่ลวก”, name2:“Blanched Noodle”, price:25, recommended:false },
+{ id:“M25”, cat:“เมนูข้าว”, name:“ผัดกระเทียม (L)”, name2:“Stir-fry Garlic (L)”, price:100, recommended:false },
+{ id:“M26”, cat:“เมนูข้าว”, name:“ผัดกระเพรา (L)”, name2:“Stir-fry Basil (L)”, price:100, recommended:false },
+{ id:“M27”, cat:“เมนูข้าว”, name:“ลูกชิ้นลวก”, name2:“Blanched Ball”, price:50, recommended:false },
+{ id:“M28”, cat:“เมนูข้าว”, name:“ไข่ดาว”, name2:“Fried Egg”, price:10, recommended:false },
+{ id:“M29”, cat:“ก๋วยเตี๋ยวเนื้อ”, name:“ก๋วยเตี๋ยวเนื้อ”, name2:“Beef Noodle”, price:70, recommended:false },
+{ id:“M30”, cat:“ก๋วยเตี๋ยวเนื้อ”, name:“ลวกจิ้มรวม”, name2:“Beef Boiled Platter”, price:120, recommended:false },
+{ id:“M31”, cat:“ก๋วยเตี๋ยวเนื้อ”, name:“หม้อไฟเนื้อ”, name2:“Beef Hot Pot”, price:299, recommended:false },
+{ id:“M32”, cat:“ก๋วยเตี๋ยวเนื้อ”, name:“เกาเหลาเนื้อ”, name2:“Beef Soup”, price:100, recommended:false },
+{ id:“M33”, cat:“ก๋วยเตี๋ยวหมู”, name:“ก๋วยเตี๋ยวเด็ก”, name2:“Kids Noodle Soup”, price:35, recommended:false },
+{ id:“M34”, cat:“ก๋วยเตี๋ยวหมู”, name:“ก๋วยเตี๋ยวหมู”, name2:“Pork Noodle”, price:60, recommended:true },
+{ id:“M35”, cat:“ก๋วยเตี๋ยวหมู”, name:“หมี่คลุกหมูนุ่ม”, name2:“Vermicelli with Spicy Pork”, price:89, recommended:true },
+{ id:“M36”, cat:“ก๋วยเตี๋ยวหมู”, name:“หม้อไฟหมู”, name2:“Pork Hot Pot”, price:269, recommended:false },
+{ id:“M37”, cat:“ก๋วยเตี๋ยวหมู”, name:“เกาเหลาหมู”, name2:“Pork Soup (No Noodles)”, price:80, recommended:false },
+{ id:“M38”, cat:“ขนมหวาน”, name:“กล้วยอบ เซทคริสมาส”, name2:“Baked Banana Christmas Set”, price:99, recommended:false },
+{ id:“M39”, cat:“ขนมหวาน”, name:“ขนมถ้วย”, name2:“Thai Coconut Milk Custard”, price:20, recommended:false },
+{ id:“M40”, cat:“ขนมหวาน”, name:“ขนมบ้าบิ่น”, name2:“Thai Coconut Pancake”, price:50, recommended:true },
+{ id:“M41”, cat:“ขนมหวาน”, name:“ขนุนปอกพร้อมทาน”, name2:“Fresh Jackfruit”, price:50, recommended:false },
+{ id:“M42”, cat:“ขนมหวาน”, name:“ผลไม้ชั่งกิโล”, name2:“Fresh Fruit by Weight”, price:0, recommended:false },
+{ id:“M43”, cat:“ขนมหวาน”, name:“มะละกอทั้งลูก (L)”, name2:“Ripe Papaya (L)”, price:30, recommended:false },
+{ id:“M44”, cat:“ขนมหวาน”, name:“มะละกอปอกพร้อมทาน (M)”, name2:“Ripe Papaya (M)”, price:50, recommended:false },
+{ id:“M45”, cat:“ขนมหวาน”, name:“ลอดช่องน้ำกะทิ”, name2:“Pandan Jelly with Coconut Milk”, price:35, recommended:false },
+{ id:“M46”, cat:“ขนมหวาน”, name:“ส้มสดลูกใหญ่”, name2:“Fresh Large Oranges”, price:40, recommended:false },
+{ id:“M47”, cat:“อาหารว่าง”, name:“กล้วยฉาบ L”, name2:“Banana Chips (L)”, price:60, recommended:false },
+{ id:“M48”, cat:“อาหารว่าง”, name:“กล้วยตาก (ซองแยกชิ้น)”, name2:“Dried Banana”, price:69, recommended:false },
+{ id:“M49”, cat:“อาหารว่าง”, name:“กล้วยตาก พลังงานแสงอาทิตย์”, name2:“Solar Dried Banana”, price:120, recommended:false },
+{ id:“M50”, cat:“อาหารว่าง”, name:“ลูกชิ้นหมูปิ้ง จัดเซท”, name2:“Grilled Pork Ball Set”, price:60, recommended:true },
+{ id:“M51”, cat:“อาหารว่าง”, name:“เต้าหู้ ต้ามู่”, name2:“Tofu”, price:60, recommended:true },
+{ id:“M52”, cat:“อาหารว่าง”, name:“เนื้อทอดแดดเดียว”, name2:“Fried Sun-Dried Beef”, price:99, recommended:true },
+{ id:“M53”, cat:“อาหารว่าง”, name:“แคปวัว”, name2:“Crispy Beef Skin”, price:35, recommended:false },
+{ id:“M54”, cat:“Promotion”, name:“หมี่คลุกหมูนุ่ม+มะละกอ”, name2:“Vermicelli Spicy Pork + Ripe Papaya”, price:99, recommended:false },
+{ id:“M55”, cat:“Promotion”, name:“หมี่คลุกเนื้อนุ่มหนังไก่กรอบ”, name2:“Spicy Vermicelli Beef & Crispy Chicken”, price:109, recommended:false },
+];
+
+const CAT_COLOR = {
+“รายการเสริม”:”#6366f1”,“เครื่องดื่ม”:”#06b6d4”,“เมนูข้าว”:”#f59e0b”,
+“ก๋วยเตี๋ยวเนื้อ”:”#ef4444”,“ก๋วยเตี๋ยวหมู”:”#f97316”,
+“ขนมหวาน”:”#ec4899”,“อาหารว่าง”:”#84cc16”,“Promotion”:”#a855f7”,
+};
+const CAT_ICON = {
+“รายการเสริม”:“📦”,“เครื่องดื่ม”:“🧋”,“เมนูข้าว”:“🍚”,
+“ก๋วยเตี๋ยวเนื้อ”:“🥩”,“ก๋วยเตี๋ยวหมู”:“🍜”,
+“ขนมหวาน”:“🍮”,“อาหารว่าง”:“🍢”,“Promotion”:“🎯”,
+};
+
+const ING_CATS = {
+“เส้น & แป้ง”: [“ING0001”,“ING0002”,“ING0003”,“ING0004”,“ING0005”,“ING0006”,“ING0007”,“ING_VERMICELLI”],
+“เนื้อวัว”: [“ING0030”,“ING0031”,“ING0032”,“ING0033”,“ING0034”,“ING0035”,“ING0036”,“ING_BEEF_MINCE”,“ING_BEEF_BOILED”],
+“หมู”: [“ING0038”,“ING0039”,“ING_PORK_MINCE”,“ING_PORK_BOILED”,“ING_CRISPY_PORK”],
+“ลูกชิ้น”: [“ING0008”,“ING0009”,“ING0010”,“ING_PORKBALL”,“ING_BEEFBALL”],
+“ผัก & เครื่องเทศ”: [“ING0011”,“ING0012”,“ING0013”,“ING0014”,“ING0015”,“ING0016”,“ING0017”,“ING0018”,“ING0019”,“ING_BASIL”,“ING_GALANGAL”,“ING_LEMONGRASS”,“ING_LIME”],
+“ซอส & เครื่องปรุง”: [“ING0020”,“ING0041”,“ING0042”,“ING0043”,“ING0047”,“ING0053”,“ING0054”,“ING_FISHSAUCE”,“ING_OYSTER”,“ING_SOYSAUCE_W”,“ING_SOYSAUCE_D”,“ING_SUGAR”,“ING_OIL”,“ING_VINEGAR”,“ING_SESAME”],
+“เครื่องเทศแห้ง”: [“ING0044”,“ING0045”,“ING0046”,“ING_PEPPER_W”,“ING_PEPPER_B”,“ING_CORIANDER”,“ING_DRIED_CHILI”,“ING0025”,“ING0026”,“ING0027”],
+“ซอสสำเร็จรูป”: [“ING0021”,“ING0022”,“ING0023”,“ING0024”,“ING0028”,“ING0029”,“ING0049”,“ING0050”,“ING0048”,“ING_ROSEDEE_MOO”,“ING_PHALO”],
+“น้ำสต๊อก”: [“ING_STOCK_PORK”,“ING_STOCK_BEEF”],
+“อื่นๆ”: [“ING_EGG”,“ING_RICE”,“ING_TOFU”,“ING_COCONUT”,“ING_COCONUT_MILK”,“ING_BANANA”,“ING_PAPAYA”,“ING_JACKFRUIT”],
+};
+
+export default function App() {
+const [recipes, setRecipes] = useState({});
+const [settings, setSettings] = useState({ wastePct:0.03, packaging:0, labor:0, other:0, platformPct:0 });
+const [selectedMenu, setSelectedMenu] = useState(“M34”);
+const [activeTab, setActiveTab] = useState(“recipe”);
+const [menuSearch, setMenuSearch] = useState(””);
+const [selectedCat, setSelectedCat] = useState(“ทั้งหมด”);
+const [ingSearch, setIngSearch] = useState(””);
+const [ingCategory, setIngCategory] = useState(“ทั้งหมด”);
+const [showIngPanel, setShowIngPanel] = useState(true);
+
+const calcMenuCost = useCallback((menuId) => {
+const recipe = recipes[menuId] || [];
+const rawCost = recipe.reduce((sum, r) => {
+const ing = INGREDIENTS_DB.find(i => i.id === r.ingId);
+return sum + (ing ? ing.costPerUnit * r.qty : 0);
+}, 0);
+const afterWaste = rawCost * (1 + settings.wastePct);
+const menu = MENUS_DATA.find(m => m.id === menuId);
+const platformFee = (menu?.price || 0) * settings.platformPct;
+const total = afterWaste + settings.packaging + settings.labor + settings.other + platformFee;
+const profit = (menu?.price || 0) - total;
+const profitPct = (menu?.price || 0) > 0 ? (profit / menu.price) * 100 : 0;
+return { rawCost, afterWaste, total, profit, profitPct };
+}, [recipes, settings]);
+
+const filteredMenus = useMemo(() => {
+return MENUS_DATA.filter(m =>
+(selectedCat === “ทั้งหมด” || m.cat === selectedCat) &&
+(m.name.toLowerCase().includes(menuSearch.toLowerCase()) || m.name2.toLowerCase().includes(menuSearch.toLowerCase()))
+);
+}, [selectedCat, menuSearch]);
+
+const filteredIngs = useMemo(() => {
+let list = ingCategory === “ทั้งหมด” ? INGREDIENTS_DB : INGREDIENTS_DB.filter(i => (ING_CATS[ingCategory] || []).includes(i.id));
+if (ingSearch) list = list.filter(i => i.name.toLowerCase().includes(ingSearch.toLowerCase()));
+return list;
+}, [ingSearch, ingCategory]);
+
+const currentMenu = MENUS_DATA.find(m => m.id === selectedMenu);
+const currentRecipe = recipes[selectedMenu] || [];
+const currentCost = calcMenuCost(selectedMenu);
+const totalWithRecipe = Object.keys(recipes).filter(k => (recipes[k] || []).length > 0).length;
+
+const addIngredient = useCallback((ing) => {
+setRecipes(prev => {
+const existing = prev[selectedMenu] || [];
+if (existing.find(r => r.ingId === ing.id)) return prev;
+const defQty = (ing.unit === “g” || ing.unit === “ml”) ? 100 : 1;
+return { …prev, [selectedMenu]: […existing, { ingId: ing.id, qty: defQty }] };
+});
+}, [selectedMenu]);
+
+const updateQty = useCallback((ingId, val) => {
+setRecipes(prev => ({ …prev, [selectedMenu]: (prev[selectedMenu] || []).map(r => r.ingId === ingId ? { …r, qty: parseFloat(val) || 0 } : r) }));
+}, [selectedMenu]);
+
+const removeIng = useCallback((ingId) => {
+setRecipes(prev => ({ …prev, [selectedMenu]: (prev[selectedMenu] || []).filter(r => r.ingId !== ingId) }));
+}, [selectedMenu]);
+
+const menusByCategory = useMemo(() => {
+const cats = {};
+filteredMenus.forEach(m => { if (!cats[m.cat]) cats[m.cat] = []; cats[m.cat].push(m); });
+return cats;
+}, [filteredMenus]);
+
+const allMenuCosts = useMemo(() => MENUS_DATA.map(m => ({ …m, …calcMenuCost(m.id), hasRecipe: (recipes[m.id] || []).length > 0 })), [calcMenuCost, recipes]);
+
+const S = { // styles
+app: { display:“flex”, height:“100vh”, fontFamily:”‘Noto Sans Thai’, Sarabun, sans-serif”, background:”#0c0c12”, color:”#e2e8f0”, overflow:“hidden” },
+sidebar: { width:252, background:”#13131c”, borderRight:“1px solid #1e1e2e”, display:“flex”, flexDirection:“column”, flexShrink:0 },
+main: { flex:1, display:“flex”, flexDirection:“column”, overflow:“hidden” },
+};
+
+return (
+<div style={S.app}>
+{/* SIDEBAR */}
+<div style={S.sidebar}>
+<div style={{ padding:“18px 14px 10px”, borderBottom:“1px solid #1e1e2e” }}>
+<div style={{ fontSize:18, fontWeight:900, color:”#f97316” }}>🐯 เสือกินเส้น</div>
+<div style={{ fontSize:10, color:”#4b5563”, marginTop:1, letterSpacing:1 }}>MENU COST CALCULATOR</div>
+<div style={{ marginTop:8, display:“flex”, gap:8 }}>
+<Pill color="#f97316">{totalWithRecipe} / {MENUS_DATA.length} เมนู</Pill>
+</div>
+</div>
+<div style={{ padding:“8px 10px 4px” }}>
+<input value={menuSearch} onChange={e => setMenuSearch(e.target.value)} placeholder=“ค้นหาเมนู…” style={inputStyle} />
+</div>
+<div style={{ padding:“0 8px 6px”, display:“flex”, flexWrap:“wrap”, gap:3 }}>
+{[“ทั้งหมด”,“ก๋วยเตี๋ยวหมู”,“ก๋วยเตี๋ยวเนื้อ”,“เมนูข้าว”,“อาหารว่าง”,“เครื่องดื่ม”,“ขนมหวาน”,“Promotion”].map(cat => (
+<button key={cat} onClick={() => setSelectedCat(cat)} style={{ fontSize:10, padding:“2px 7px”, borderRadius:20, border:“none”, cursor:“pointer”, transition:“all 0.15s”,
+background: selectedCat===cat ? (CAT_COLOR[cat]||”#f97316”) : “#1a1a26”, color: selectedCat===cat ? “#fff” : “#6b7280” }}>
+{cat===“ทั้งหมด”?“ทั้งหมด”:cat}
+</button>
+))}
+</div>
+<div style={{ flex:1, overflowY:“auto” }}>
+{Object.entries(menusByCategory).map(([cat, menus]) => (
+<div key={cat}>
+<div style={{ padding:“6px 14px 3px”, fontSize:9, fontWeight:800, color:CAT_COLOR[cat]||”#64748b”, textTransform:“uppercase”, letterSpacing:1.2 }}>
+{CAT_ICON[cat]} {cat}
+</div>
+{menus.map(menu => {
+const hasCost = (recipes[menu.id]||[]).length > 0;
+const cost = hasCost ? calcMenuCost(menu.id) : null;
+const isSelected = selectedMenu === menu.id;
+return (
+<div key={menu.id} onClick={() => setSelectedMenu(menu.id)} style={{
+padding:“7px 12px”, cursor:“pointer”, borderLeft:`3px solid ${isSelected?(CAT_COLOR[cat]||"#f97316"):"transparent"}`,
+background: isSelected ? “#1a1a2e” : “transparent”, transition:“all 0.12s” }}>
+<div style={{ fontSize:12, fontWeight:600, color: isSelected?”#fff”:”#cbd5e1”, lineHeight:1.3 }}>{menu.name}</div>
+<div style={{ display:“flex”, justifyContent:“space-between”, alignItems:“center”, marginTop:2 }}>
+<span style={{ fontSize:10, color:”#4b5563” }}>฿{menu.price}</span>
+{hasCost ? (
+<span style={{ fontSize:9, fontWeight:700, color: cost.profitPct>50?”#22c55e”:cost.profitPct>30?”#f59e0b”:”#ef4444” }}>
+{cost.profitPct.toFixed(0)}% กำไร
+</span>
+) : <span style={{ fontSize:9, color:”#2d2d3e” }}>ยังไม่มีสูตร</span>}
+</div>
+</div>
+);
+})}
+</div>
+))}
+</div>
+<div style={{ borderTop:“1px solid #1e1e2e”, padding:8 }}>
+<button onClick={() => setActiveTab(“summary”)} style={{ width:“100%”, background:activeTab===“summary”?”#1e293b”:“transparent”,
+border:“1px solid #1e1e2e”, borderRadius:8, padding:“7px”, color:”#94a3b8”, fontSize:12, cursor:“pointer” }}>
+📊 สรุปต้นทุนทุกเมนู
+</button>
+</div>
+</div>
+
+```
+  {/* MAIN */}
+  <div style={S.main}>
+    {/* Header */}
+    {currentMenu && (
+      <div style={{ padding:"14px 22px", borderBottom:"1px solid #1e1e2e", background:"#13131c", display:"flex", alignItems:"center", justifyContent:"space-between", flexShrink:0 }}>
+        <div>
+          <div style={{ display:"flex", alignItems:"center", gap:6, marginBottom:4 }}>
+            <span style={{ background:(CAT_COLOR[currentMenu.cat]||"#f97316")+"33", color:CAT_COLOR[currentMenu.cat]||"#f97316", fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:20 }}>
+              {CAT_ICON[currentMenu.cat]} {currentMenu.cat}
+            </span>
+            {currentMenu.recommended && <span style={{ background:"#f59e0b22", color:"#f59e0b", fontSize:10, fontWeight:700, padding:"2px 8px", borderRadius:20 }}>⭐ แนะนำ</span>}
+          </div>
+          <div style={{ fontSize:20, fontWeight:900, color:"#fff" }}>{currentMenu.name}</div>
+          <div style={{ fontSize:12, color:"#4b5563" }}>{currentMenu.name2}</div>
+        </div>
+        <div style={{ textAlign:"right" }}>
+          <div style={{ fontSize:26, fontWeight:900, color:"#f97316" }}>฿{currentMenu.price}</div>
+          {currentRecipe.length > 0 && (
+            <div style={{ fontSize:12, fontWeight:700, color: currentCost.profitPct>50?"#22c55e":currentCost.profitPct>30?"#f59e0b":"#ef4444" }}>
+              ต้นทุน ฿{currentCost.total.toFixed(2)} · กำไร {currentCost.profitPct.toFixed(1)}%
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+
+    {/* Tabs */}
+    <div style={{ display:"flex", padding:"0 22px", background:"#13131c", borderBottom:"1px solid #1e1e2e", flexShrink:0 }}>
+      {[["recipe","📝 สูตร"],["settings","⚙️ ตั้งค่า"],["summary","📊 สรุปรวม"]].map(([tab, label]) => (
+        <button key={tab} onClick={() => setActiveTab(tab)} style={{
+          padding:"9px 14px", background:"transparent", border:"none", borderBottom:`2px solid ${activeTab===tab?"#f97316":"transparent"}`,
+          color: activeTab===tab?"#f97316":"#4b5563", fontWeight: activeTab===tab?700:400, fontSize:12, cursor:"pointer", fontFamily:"inherit" }}>
+          {label}
+        </button>
+      ))}
+    </div>
+
+    <div style={{ flex:1, overflow:"hidden", display:"flex" }}>
+      {activeTab === "recipe" && (
+        <div style={{ display:"flex", flex:1, overflow:"hidden" }}>
+          {/* Recipe editor */}
+          <div style={{ flex:1, overflowY:"auto", padding:"18px 22px" }}>
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14 }}>
+              <span style={{ fontSize:13, fontWeight:700, color:"#e2e8f0" }}>📋 วัตถุดิบในสูตร <span style={{ color:"#f97316" }}>({currentRecipe.length})</span></span>
+              <button onClick={() => setShowIngPanel(p => !p)} style={{ background:"#1a1a2e", border:"1px solid #2a2a3e", borderRadius:8, padding:"5px 12px", color:"#94a3b8", fontSize:11, cursor:"pointer" }}>
+                {showIngPanel ? "← ซ่อนคลัง" : "+ เปิดคลังวัตถุดิบ"}
+              </button>
+            </div>
+
+            {currentRecipe.length === 0 ? (
+              <div style={{ textAlign:"center", padding:"50px 24px" }}>
+                <div style={{ fontSize:52 }}>🧾</div>
+                <div style={{ fontSize:15, color:"#4b5563", marginTop:10 }}>ยังไม่มีวัตถุดิบ</div>
+                <div style={{ fontSize:12, color:"#374151", marginTop:4 }}>กดที่วัตถุดิบทางขวาเพื่อเพิ่ม</div>
+              </div>
+            ) : (
+              <>
+                <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+                  {currentRecipe.map(r => {
+                    const ing = INGREDIENTS_DB.find(i => i.id === r.ingId);
+                    if (!ing) return null;
+                    const lineCost = ing.costPerUnit * r.qty;
+                    const step = (ing.unit==="g"||ing.unit==="ml") ? 10 : 1;
+                    return (
+                      <div key={r.ingId} style={{ background:"#1a1a2e", borderRadius:10, padding:"10px 12px", display:"flex", alignItems:"center", gap:10, border:"1px solid #1e1e2e" }}>
+                        <div style={{ flex:1, minWidth:0 }}>
+                          <div style={{ fontSize:13, fontWeight:600, color:"#e2e8f0", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{ing.name}</div>
+                          <div style={{ fontSize:10, color:"#4b5563" }}>฿{ing.costPerUnit.toFixed(3)}/{ing.unit}</div>
+                        </div>
+                        <div style={{ display:"flex", alignItems:"center", gap:5 }}>
+                          <button onClick={() => updateQty(r.ingId, Math.max(0, r.qty - step))} style={qBtnStyle}>−</button>
+                          <input type="number" value={r.qty} onChange={e => updateQty(r.ingId, e.target.value)} min="0"
+                            style={{ width:65, textAlign:"center", background:"#0c0c12", border:"1px solid #2a2a3e", borderRadius:6, color:"#fff", fontSize:13, fontWeight:700, padding:"4px 5px", outline:"none" }} />
+                          <span style={{ fontSize:11, color:"#4b5563", minWidth:18 }}>{ing.unit}</span>
+                          <button onClick={() => updateQty(r.ingId, r.qty + step)} style={qBtnStyle}>+</button>
+                        </div>
+                        <div style={{ minWidth:65, textAlign:"right", fontSize:13, fontWeight:700, color:"#f97316" }}>฿{lineCost.toFixed(2)}</div>
+                        <button onClick={() => removeIng(r.ingId)} style={{ width:24, height:24, background:"#ef444422", border:"none", borderRadius:6, color:"#ef4444", fontSize:14, cursor:"pointer" }}>×</button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Cost breakdown */}
+                <div style={{ marginTop:16, background:"#16161f", borderRadius:12, padding:"14px 16px", border:"1px solid #1e1e2e" }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:"#64748b", marginBottom:10 }}>สรุปต้นทุน</div>
+                  {[
+                    ["วัตถุดิบ", currentCost.rawCost],
+                    [`+ ของเสีย (${(settings.wastePct*100).toFixed(0)}%)`, currentCost.rawCost * settings.wastePct],
+                    ["+ แพ็คเกจ", settings.packaging],
+                    ["+ ค่าแรง", settings.labor],
+                    ["+ อื่นๆ", settings.other],
+                    [`+ แพลตฟอร์ม (${(settings.platformPct*100).toFixed(0)}%)`, (currentMenu?.price||0) * settings.platformPct],
+                  ].filter(([,v]) => v > 0).map(([l,v]) => (
+                    <div key={l} style={{ display:"flex", justifyContent:"space-between", padding:"2px 0", fontSize:12, color:"#64748b" }}>
+                      <span>{l}</span><span style={{ color:"#94a3b8" }}>฿{v.toFixed(2)}</span>
+                    </div>
+                  ))}
+                  <div style={{ height:1, background:"#1e1e2e", margin:"8px 0" }}/>
+                  <div style={{ display:"flex", justifyContent:"space-between" }}>
+                    <span style={{ fontSize:13, fontWeight:700, color:"#e2e8f0" }}>ต้นทุนรวม</span>
+                    <span style={{ fontSize:17, fontWeight:900, color:"#ef4444" }}>฿{currentCost.total.toFixed(2)}</span>
+                  </div>
+                  <div style={{ display:"flex", justifyContent:"space-between", marginTop:6 }}>
+                    <span style={{ fontSize:13, fontWeight:700, color:"#e2e8f0" }}>กำไร / จาน</span>
+                    <span style={{ fontSize:17, fontWeight:900, color: currentCost.profit>=0?"#22c55e":"#ef4444" }}>
+                      ฿{currentCost.profit.toFixed(2)} <span style={{ fontSize:12 }}>({currentCost.profitPct.toFixed(1)}%)</span>
+                    </span>
+                  </div>
+                  <div style={{ marginTop:8, height:6, background:"#0c0c12", borderRadius:3, overflow:"hidden" }}>
+                    <div style={{ height:"100%", width:`${Math.min(100,Math.max(0,currentCost.profitPct))}%`,
+                      background: currentCost.profitPct>50?"#22c55e":currentCost.profitPct>30?"#f59e0b":"#ef4444", borderRadius:3, transition:"width 0.5s" }}/>
+                  </div>
+                  <div style={{ marginTop:4, fontSize:10, color:"#64748b" }}>
+                    {currentCost.profitPct>50?"✅ กำไรดีมาก":currentCost.profitPct>30?"⚠️ กำไรพอใช้":"❌ ควรปรับปรุงต้นทุน"}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
+
+          {/* INGREDIENT PANEL */}
+          {showIngPanel && (
+            <div style={{ width:270, borderLeft:"1px solid #1e1e2e", background:"#10101a", display:"flex", flexDirection:"column", flexShrink:0 }}>
+              <div style={{ padding:"12px 12px 6px", borderBottom:"1px solid #1e1e2e" }}>
+                <div style={{ fontSize:12, fontWeight:700, color:"#e2e8f0", marginBottom:6 }}>🥘 คลังวัตถุดิบ</div>
+                <input value={ingSearch} onChange={e => setIngSearch(e.target.value)} placeholder="ค้นหาวัตถุดิบ..." style={{ ...inputStyle, marginBottom:6 }} />
+                <div style={{ display:"flex", flexWrap:"wrap", gap:3 }}>
+                  {["ทั้งหมด",...Object.keys(ING_CATS)].map(cat => (
+                    <button key={cat} onClick={() => setIngCategory(cat)} style={{ fontSize:9, padding:"2px 6px", borderRadius:20, border:"none", cursor:"pointer",
+                      background: ingCategory===cat?"#f97316":"#1a1a26", color: ingCategory===cat?"#fff":"#6b7280" }}>
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div style={{ flex:1, overflowY:"auto", padding:8 }}>
+                {filteredIngs.map(ing => {
+                  const inRecipe = currentRecipe.find(r => r.ingId === ing.id);
+                  return (
+                    <button key={ing.id} onClick={() => addIngredient(ing)} style={{
+                      width:"100%", textAlign:"left", background: inRecipe?"#0d2010":"#1a1a26",
+                      border:`1px solid ${inRecipe?"#14532d":"#1e1e2e"}`, borderRadius:8, padding:"7px 9px", marginBottom:3,
+                      color: inRecipe?"#86efac":"#cbd5e1", cursor:"pointer", transition:"all 0.12s" }}>
+                      <div style={{ fontSize:11, fontWeight:600, lineHeight:1.3 }}>{ing.name}</div>
+                      <div style={{ fontSize:9, color: inRecipe?"#4ade80":"#4b5563", marginTop:1 }}>
+                        ฿{ing.costPerUnit.toFixed(3)}/{ing.unit}{inRecipe?" ✓ เพิ่มแล้ว":""}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === "settings" && <SettingsTab settings={settings} setSettings={setSettings} currentMenu={currentMenu} />}
+      {activeTab === "summary" && <SummaryTab allMenuCosts={allMenuCosts} setSelectedMenu={setSelectedMenu} setActiveTab={setActiveTab} />}
+    </div>
+  </div>
+</div>
+```
+
+);
+}
+
+const inputStyle = { width:“100%”, background:”#1a1a26”, border:“1px solid #1e1e2e”, borderRadius:8, padding:“6px 10px”, color:”#e2e8f0”, fontSize:12, outline:“none”, boxSizing:“border-box” };
+const qBtnStyle = { width:26, height:26, background:”#1e1e2e”, border:“none”, borderRadius:6, color:”#94a3b8”, fontSize:15, cursor:“pointer”, display:“flex”, alignItems:“center”, justifyContent:“center”, flexShrink:0 };
+
+function Pill({ children, color }) {
+return <span style={{ background:color+“22”, color, fontSize:10, fontWeight:700, padding:“2px 8px”, borderRadius:20 }}>{children}</span>;
+}
+
+function SettingsTab({ settings, setSettings, currentMenu }) {
+const update = (key, val) => setSettings(prev => ({ …prev, [key]: parseFloat(val)||0 }));
+const ex = 25;
+const exTotal = ex*(1+settings.wastePct)+settings.packaging+settings.labor+settings.other+(currentMenu?.price||60)*settings.platformPct;
+return (
+<div style={{ flex:1, overflowY:“auto”, padding:28, maxWidth:540 }}>
+<div style={{ fontSize:17, fontWeight:800, color:”#e2e8f0”, marginBottom:2 }}>⚙️ ตั้งค่าต้นทุน</div>
+<div style={{ fontSize:12, color:”#4b5563”, marginBottom:20 }}>ค่าใช้จ่ายเหล่านี้จะถูกเพิ่มในทุกเมนู</div>
+<div style={{ display:“flex”, flexDirection:“column”, gap:12 }}>
+{[
+{ key:“wastePct”, label:”% ของเสีย”, desc:“สูญเสียในกระบวนการทำอาหาร”, suffix:”%”, icon:“🗑️”, mul:100 },
+{ key:“packaging”, label:“ค่าแพ็คเกจ / กล่อง”, desc:“กล่อง ถุง อุปกรณ์บรรจุภัณฑ์”, suffix:“บาท/เมนู”, icon:“📦”, mul:1 },
+{ key:“labor”, label:“ค่าแรง”, desc:“ค่าจ้างพ่อครัว + พนักงาน”, suffix:“บาท/เมนู”, icon:“👨‍🍳”, mul:1 },
+{ key:“other”, label:“ค่าใช้จ่ายอื่นๆ”, desc:“ค่าน้ำ ค่าไฟ ค่าเช่า”, suffix:“บาท/เมนู”, icon:“💡”, mul:1 },
+{ key:“platformPct”, label:”% ค่าธรรมเนียมแพลตฟอร์ม”, desc:“Grab, LINE MAN ฯลฯ”, suffix:”%”, icon:“🚚”, mul:100 },
+].map(({ key, label, desc, suffix, icon, mul }) => (
+<div key={key} style={{ background:”#1a1a2e”, borderRadius:12, padding:“12px 14px”, border:“1px solid #1e1e2e”, display:“flex”, justifyContent:“space-between”, alignItems:“center” }}>
+<div>
+<div style={{ fontSize:13, fontWeight:600, color:”#e2e8f0” }}>{icon} {label}</div>
+<div style={{ fontSize:11, color:”#4b5563” }}>{desc}</div>
+</div>
+<div style={{ display:“flex”, alignItems:“center”, gap:6 }}>
+<input type=“number” value={(settings[key]*mul).toFixed(1)} onChange={e => update(key, parseFloat(e.target.value)/mul)} min=“0” step=“0.1”
+style={{ width:72, textAlign:“center”, background:”#0c0c12”, border:“1px solid #2a2a3e”, borderRadius:8, color:”#f97316”, fontSize:15, fontWeight:700, padding:“5px 6px”, outline:“none” }} />
+<span style={{ fontSize:11, color:”#4b5563”, minWidth:50 }}>{suffix}</span>
+</div>
+</div>
+))}
+</div>
+<div style={{ marginTop:20, background:”#1a1a2e”, borderRadius:12, padding:14, border:“1px solid #2a2a3e” }}>
+<div style={{ fontSize:12, fontWeight:700, color:”#64748b”, marginBottom:8 }}>
+ตัวอย่าง: สมมติต้นทุนวัตถุดิบ ฿{ex} จากเมนู ฿{currentMenu?.price||60}
+</div>
+{[
+[“วัตถุดิบ”, ex],
+[`+ ของเสีย ${(settings.wastePct*100).toFixed(0)}%`, ex*settings.wastePct],
+[”+ แพ็คเกจ”, settings.packaging],
+[”+ ค่าแรง”, settings.labor],
+[”+ อื่นๆ”, settings.other],
+[`+ แพลตฟอร์ม ${(settings.platformPct*100).toFixed(0)}%`, (currentMenu?.price||60)*settings.platformPct],
+].filter(([,v])=>v>0).map(([l,v]) => (
+<div key={l} style={{ display:“flex”, justifyContent:“space-between”, fontSize:11, color:”#4b5563”, padding:“2px 0” }}>
+<span>{l}</span><span style={{ color:”#94a3b8” }}>฿{v.toFixed(2)}</span>
+</div>
+))}
+<div style={{ height:1, background:”#1e1e2e”, margin:“8px 0” }}/>
+<div style={{ display:“flex”, justifyContent:“space-between”, fontSize:12, fontWeight:700 }}>
+<span style={{ color:”#e2e8f0” }}>ต้นทุนรวม</span>
+<span style={{ color:”#ef4444” }}>฿{exTotal.toFixed(2)}</span>
+</div>
+<div style={{ display:“flex”, justifyContent:“space-between”, fontSize:12, fontWeight:700, marginTop:4 }}>
+<span style={{ color:”#e2e8f0” }}>กำไร</span>
+<span style={{ color:”#22c55e” }}>฿{((currentMenu?.price||60)-exTotal).toFixed(2)} ({(((currentMenu?.price||60)-exTotal)/(currentMenu?.price||60)*100).toFixed(1)}%)</span>
+</div>
+</div>
+</div>
+);
+}
+
+function SummaryTab({ allMenuCosts, setSelectedMenu, setActiveTab }) {
+const [sortBy, setSortBy] = useState(“profitPct”);
+const [filterCat, setFilterCat] = useState(“ทั้งหมด”);
+
+const withRecipe = allMenuCosts.filter(m => m.hasRecipe);
+const filtered = withRecipe.filter(m => filterCat===“ทั้งหมด”||m.cat===filterCat);
+const sorted = […filtered].sort((a,b) => {
+if (sortBy===“profitPct”) return b.profitPct-a.profitPct;
+if (sortBy===“profit”) return b.profit-a.profit;
+if (sortBy===“cost”) return a.total-b.total;
+return b.price-a.price;
+});
+const avgProfit = filtered.length ? filtered.reduce((s,m)=>s+m.profitPct,0)/filtered.length : 0;
+const noRecipe = allMenuCosts.filter(m=>!m.hasRecipe);
+
+return (
+<div style={{ flex:1, overflowY:“auto”, padding:22 }}>
+{withRecipe.length === 0 ? (
+<div style={{ textAlign:“center”, padding:“80px 24px”, color:”#4b5563” }}>
+<div style={{ fontSize:48 }}>📊</div>
+<div style={{ fontSize:15, marginTop:10 }}>ยังไม่มีเมนูที่มีสูตรอาหาร</div>
+<div style={{ fontSize:12, marginTop:4, color:”#374151” }}>กลับไปที่แท็บ “สูตร” แล้วเพิ่มวัตถุดิบในเมนู</div>
+</div>
+) : (
+<>
+{/* Stats */}
+<div style={{ display:“grid”, gridTemplateColumns:“repeat(4,1fr)”, gap:10, marginBottom:18 }}>
+{[
+{ l:“เมนูมีสูตร”, v:`${withRecipe.length}`, u:`/ ${allMenuCosts.length}`, c:”#6366f1” },
+{ l:“กำไรเฉลี่ย”, v:`${avgProfit.toFixed(1)}`, u:”%”, c: avgProfit>50?”#22c55e”:avgProfit>30?”#f59e0b”:”#ef4444” },
+{ l:“กำไรสูงสุด”, v:sorted[0]?.name||”-”, u:sorted[0]?`${sorted[0].profitPct.toFixed(0)}%`:””, c:”#22c55e” },
+{ l:“กำไรต่ำสุด”, v:sorted[sorted.length-1]?.name||”-”, u:sorted[sorted.length-1]?`${sorted[sorted.length-1].profitPct.toFixed(0)}%`:””, c:”#ef4444” },
+].map(({ l,v,u,c }) => (
+<div key={l} style={{ background:”#1a1a2e”, borderRadius:10, padding:“12px 14px”, border:`1px solid ${c}33` }}>
+<div style={{ fontSize:10, color:”#4b5563”, marginBottom:3 }}>{l}</div>
+<div style={{ fontSize: v.length>12?11:18, fontWeight:800, color:c, lineHeight:1.2 }}>{v}</div>
+{u && <div style={{ fontSize:11, color:”#64748b” }}>{u}</div>}
+</div>
+))}
+</div>
+
+```
+      {/* Filters */}
+      <div style={{ display:"flex", flexWrap:"wrap", gap:6, marginBottom:14, alignItems:"center" }}>
+        <span style={{ fontSize:11, color:"#4b5563" }}>เรียง:</span>
+        {[["profitPct","% กำไร"],["profit","กำไร/จาน"],["cost","ต้นทุน"],["price","ราคาขาย"]].map(([k,l]) => (
+          <button key={k} onClick={() => setSortBy(k)} style={{ padding:"3px 9px", borderRadius:20, border:"none", cursor:"pointer", fontSize:11,
+            background: sortBy===k?"#f97316":"#1a1a26", color: sortBy===k?"#fff":"#64748b" }}>{l}</button>
+        ))}
+        <div style={{ flex:1 }}/>
+        {["ทั้งหมด",...Object.keys(CAT_COLOR)].map(cat => (
+          <button key={cat} onClick={() => setFilterCat(cat)} style={{ padding:"3px 9px", borderRadius:20, border:"none", cursor:"pointer", fontSize:10,
+            background: filterCat===cat?(CAT_COLOR[cat]||"#f97316"):"#1a1a26", color: filterCat===cat?"#fff":"#64748b" }}>{cat}</button>
+        ))}
+      </div>
+
+      {/* Table */}
+      <div style={{ background:"#1a1a2e", borderRadius:12, border:"1px solid #1e1e2e", overflow:"hidden", marginBottom:16 }}>
+        <table style={{ width:"100%", borderCollapse:"collapse" }}>
+          <thead>
+            <tr style={{ background:"#13131c", borderBottom:"1px solid #1e1e2e" }}>
+              {["เมนู","หมวด","ราคา","ต้นทุน","กำไร","% กำไร",""].map((h,i) => (
+                <th key={i} style={{ padding:"9px 12px", textAlign:"left", fontSize:10, fontWeight:700, color:"#4b5563", textTransform:"uppercase", letterSpacing:0.8 }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {sorted.map((m,i) => (
+              <tr key={m.id} onClick={() => { setSelectedMenu(m.id); setActiveTab("recipe"); }}
+                style={{ borderBottom:"1px solid #1e1e2e", cursor:"pointer", background: i%2===0?"transparent":"#13131c" }}>
+                <td style={{ padding:"9px 12px", fontSize:12, fontWeight:600, color:"#e2e8f0" }}>{m.name}</td>
+                <td style={{ padding:"9px 12px" }}>
+                  <span style={{ fontSize:9, background:(CAT_COLOR[m.cat]||"#64748b")+"33", color:CAT_COLOR[m.cat]||"#94a3b8", padding:"2px 6px", borderRadius:20, fontWeight:700 }}>{m.cat}</span>
+                </td>
+                <td style={{ padding:"9px 12px", fontSize:12, color:"#94a3b8" }}>฿{m.price}</td>
+                <td style={{ padding:"9px 12px", fontSize:12, color:"#f97316", fontWeight:700 }}>฿{m.total.toFixed(2)}</td>
+                <td style={{ padding:"9px 12px", fontSize:12, fontWeight:700, color: m.profit>=0?"#22c55e":"#ef4444" }}>฿{m.profit.toFixed(2)}</td>
+                <td style={{ padding:"9px 12px" }}>
+                  <div style={{ display:"flex", alignItems:"center", gap:6 }}>
+                    <div style={{ flex:1, height:5, background:"#0c0c12", borderRadius:3, overflow:"hidden", minWidth:40 }}>
+                      <div style={{ height:"100%", width:`${Math.min(100,Math.max(0,m.profitPct))}%`,
+                        background: m.profitPct>50?"#22c55e":m.profitPct>30?"#f59e0b":"#ef4444", borderRadius:3 }} />
+                    </div>
+                    <span style={{ fontSize:11, fontWeight:700, color: m.profitPct>50?"#22c55e":m.profitPct>30?"#f59e0b":"#ef4444", minWidth:38 }}>
+                      {m.profitPct.toFixed(1)}%
+                    </span>
+                  </div>
+                </td>
+                <td style={{ padding:"9px 12px" }}>
+                  <span style={{ fontSize:9, padding:"2px 7px", borderRadius:20, fontWeight:700,
+                    background: m.profitPct>50?"#052e16":m.profitPct>30?"#431407":"#450a0a",
+                    color: m.profitPct>50?"#86efac":m.profitPct>30?"#fdba74":"#fca5a5" }}>
+                    {m.profitPct>50?"✅ ดีมาก":m.profitPct>30?"⚠️ พอใช้":"❌ แก้ไข"}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* No recipe */}
+      {noRecipe.length > 0 && (
+        <div style={{ padding:12, background:"#13131c", borderRadius:10, border:"1px solid #1e1e2e" }}>
+          <div style={{ fontSize:11, color:"#4b5563", marginBottom:6 }}>⚪ ยังไม่มีสูตร ({noRecipe.length} เมนู) — คลิกเพื่อเพิ่มสูตร</div>
+          <div style={{ display:"flex", flexWrap:"wrap", gap:5 }}>
+            {noRecipe.map(m => (
+              <button key={m.id} onClick={() => { setSelectedMenu(m.id); setActiveTab("recipe"); }}
+                style={{ fontSize:10, padding:"3px 9px", borderRadius:20, background:"#1a1a26", border:"1px solid #1e1e2e", color:"#4b5563", cursor:"pointer" }}>
+                {m.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </>
+  )}
+</div>
+```
+
+);
+}
